@@ -17,6 +17,8 @@ import kotlin.io.path.deleteRecursively
 import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.outputStream
+import kotlin.reflect.KProperty0
+import kotlin.reflect.jvm.isAccessible
 import kotlin.time.Duration.Companion.seconds
 
 val jackson: ObjectMapper by lazy(LazyThreadSafetyMode.NONE) {
@@ -62,3 +64,13 @@ fun Path.deleteRecursivelySilently() = try {
     deleteIfExists()
 } catch (_: Exception) {
 }
+
+/**
+ * Returns true if a lazy property reference has been initialized, or if the property is not lazy.
+ */
+val KProperty0<*>.isLazyInitialized: Boolean
+    get() {
+        if (this !is Lazy<*>) return true
+        isAccessible = true
+        return (getDelegate() as Lazy<*>).isInitialized()
+    }

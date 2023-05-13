@@ -2,8 +2,11 @@
 
 package com.github.secretx33.whisperjsontosrt
 
+import com.github.secretx33.whisperjsontosrt.compress.CompressedFile
+import com.github.secretx33.whisperjsontosrt.compress.RarCompressedFile
+import com.github.secretx33.whisperjsontosrt.compress.SevenZipCompressedFile
+import com.github.secretx33.whisperjsontosrt.compress.ZipCompressedFile
 import com.github.secretx33.whisperjsontosrt.model.AppResources
-import org.apache.commons.compress.archivers.sevenz.SevenZFile
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.UUID
@@ -53,13 +56,16 @@ private fun Path.isSupportedFormat(): Boolean = supportedExtensions.any { extens
 
 private fun AppResources.extractCompressedFiles(files: Set<Path>): Set<Path> = files.flatMapTo(mutableSetOf()) {
     when (it.extension.lowercase()) {
-        "7z" -> extractSevenZipFile(it)
+        "7z" -> extractCompressedFile(SevenZipCompressedFile(it))
+        "rar" -> extractCompressedFile(RarCompressedFile(it))
+        "zip" -> extractCompressedFile(ZipCompressedFile(it))
         else -> setOf(it)
     }
 }
 
-private fun AppResources.extractSevenZipFile(path: Path): Set<Path> {
+private fun <T> AppResources.extractCompressedFile(compressedFile: CompressedFile<T>): Set<Path> {
     val temporaryFolder = createTempDirectory(UUID.randomUUID().toString().replace("-", "")).registerForRemoval()
+    val path = compressedFile.compressedFile
     val destinyFolder = path.parent?.resolve(path.nameWithoutExtension) ?: Path(path.nameWithoutExtension)
 
     if (destinyFolder.isRegularFile() || destinyFolder.walk().drop(1).any()) {
@@ -68,20 +74,10 @@ private fun AppResources.extractSevenZipFile(path: Path): Set<Path> {
     }
 
     try {
-        SevenZFile(path.toFile()).use {
-            var entry = it.nextEntry
-            while (entry?.isDirectory == true) {
-                entry = it.nextEntry
-            }
-
-            while (entry != null) {
-                val entryFile = temporaryFolder / entry.name
-
-                it.getInputStream(entry).copyTo(entryFile)
-
-                do {
-                    entry = it.nextEntry
-                } while (entry?.isDirectory == true)
+        compressedFile.use {
+            it.listFiles().forEach { entry ->
+                val entryFile = temporaryFolder / it.getEntryName(entry)
+                it.getFileInputStream(entry).copyTo(entryFile)
             }
         }
 
