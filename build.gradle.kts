@@ -18,6 +18,8 @@ repositories {
 
 dependencies {
     implementation(kotlin("stdlib-jdk8"))
+    implementation("org.apache.commons:commons-compress:1.23.0")
+    implementation("org.tukaani:xz:1.9")
     implementation(platform("com.fasterxml.jackson:jackson-bom:2.15.0"))
     implementation("com.fasterxml.jackson.core:jackson-databind")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")

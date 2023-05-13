@@ -3,6 +3,8 @@
 package com.github.secretx33.whisperjsontosrt
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.secretx33.whisperjsontosrt.exception.QuitApplicationException
+import com.github.secretx33.whisperjsontosrt.model.AppResources
 import com.github.secretx33.whisperjsontosrt.model.WhisperJson
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -14,9 +16,20 @@ import kotlin.io.path.writeText
 import kotlin.time.ExperimentalTime
 import kotlin.time.measureTimedValue
 
-fun main(args: Array<String>) = bootstrapApplication(args)
+fun main(args: Array<String>) {
+    try {
+        bootstrapApplication(args)
+    } catch (t: Throwable) {
+        when (t) {
+            is QuitApplicationException -> t.message?.let(::printError)
+            else -> printError("Error: ${t::class.simpleName}: ${t.message}\n${t.stackTraceToString()}")
+        }
+    }
+}
 
-private fun bootstrapApplication(args: Array<String>) {
+private fun bootstrapApplication(args: Array<String>) = AppResources().use { it.processArguments(args) }
+
+private fun AppResources.processArguments(args: Array<String>) {
     val (subtitleFiles, duration) = measureTimedValue {
         processFiles(args).onEach(::convertJsonToSrt)
     }
