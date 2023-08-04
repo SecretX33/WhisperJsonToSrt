@@ -8,7 +8,7 @@ plugins {
 }
 
 group = "com.github.secretx33"
-version = "1.0-SNAPSHOT"
+version = "0.1"
 
 val javaVersion = 17
 
